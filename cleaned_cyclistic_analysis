@@ -1,0 +1,109 @@
+# Cyclistic Case Study - Analyzing 2019-2020 Bike Share Data
+
+# Load required libraries
+library(tidyverse)
+
+# Load datasets
+Q1_2019 <- read.csv("Divvy_Trips_2019_Q1.csv")
+Q2_2019 <- read.csv("Divvy_Trips_2019_Q2.csv")
+Q3_2019 <- read.csv("Divvy_Trips_2019_Q3.csv")
+Q4_2019 <- read.csv("Divvy_Trips_2019_Q4.csv")
+Q1_2020 <- read.csv("Divvy_Trips_2020_Q1.csv")
+
+# Data Cleaning - Add ride length and day of week, filter invalid trips
+clean_data <- function(df) {
+  df %>%
+    mutate(
+      ride_length = as.numeric(difftime(end_time, start_time, units = "mins")),
+      day_of_week = weekdays(as.Date(start_time))
+    ) %>%
+    filter(ride_length > 0)
+}
+
+Q1_2019 <- clean_data(Q1_2019)
+Q2_2019 <- clean_data(Q2_2019)
+Q3_2019 <- clean_data(Q3_2019)
+Q4_2019 <- clean_data(Q4_2019)
+Q1_2020 <- clean_data(Q1_2020)
+
+# Ensure consistency across datasets
+convert_ids <- function(df) {
+  df %>%
+    mutate(
+      trip_id = as.character(trip_id),
+      bikeid = as.character(bikeid)
+    )
+}
+
+Q1_2019 <- convert_ids(Q1_2019)
+Q2_2019 <- convert_ids(Q2_2019)
+Q3_2019 <- convert_ids(Q3_2019)
+Q4_2019 <- convert_ids(Q4_2019)
+Q1_2020 <- convert_ids(Q1_2020)
+
+# Combine datasets
+all_data <- bind_rows(Q1_2019, Q2_2019, Q3_2019, Q4_2019, Q1_2020)
+
+# Save combined dataset
+write.csv(all_data, "Cleaned_Cyclistic_Data.csv", row.names = FALSE)
+
+# Summary Statistics
+summary_stats <- all_data %>%
+  group_by(usertype) %>%
+  summarise(
+    mean_ride_length = mean(ride_length, na.rm = TRUE),
+    median_ride_length = median(ride_length, na.rm = TRUE),
+    max_ride_length = max(ride_length, na.rm = TRUE),
+    min_ride_length = min(ride_length, na.rm = TRUE)
+  )
+write.csv(summary_stats, "Summary_Statistics.csv", row.names = FALSE)
+
+# Total Rides by Day
+total_rides <- all_data %>%
+  group_by(usertype, day_of_week) %>%
+  summarise(total_rides = n())
+write.csv(total_rides, "Total_Rides_By_Day.csv", row.names = FALSE)
+
+# Average Ride Length by Day
+avg_ride_length <- all_data %>%
+  group_by(usertype, day_of_week) %>%
+  summarise(average_ride_length = mean(ride_length, na.rm = TRUE))
+write.csv(avg_ride_length, "Average_Ride_Length_By_Day.csv", row.names = FALSE)
+
+# Visualization - Total Rides by Day
+total_rides$day_of_week <- factor(total_rides$day_of_week, 
+                                  levels = c("Sunday", "Monday", "Tuesday", 
+                                             "Wednesday", "Thursday", "Friday", 
+                                             "Saturday"))
+
+ggplot(total_rides, aes(x = day_of_week, y = total_rides, fill = usertype)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(title = "Total Rides by Day of the Week",
+       x = "Day of the Week", y = "Total Rides", fill = "User Type") +
+  theme_minimal()
+ggsave("Total_Rides_By_Day_Final.png", width = 10, height = 6)
+
+# Visualization - Average Ride Length by Day
+avg_ride_length$day_of_week <- factor(avg_ride_length$day_of_week, 
+                                      levels = c("Sunday", "Monday", "Tuesday", 
+                                                 "Wednesday", "Thursday", "Friday", 
+                                                 "Saturday"))
+
+ggplot(avg_ride_length, aes(x = day_of_week, y = average_ride_length, color = usertype, group = usertype)) +
+  geom_line(linewidth = 1) +
+  geom_point(size = 2) +
+  labs(title = "Average Ride Length by Day of the Week",
+       x = "Day of the Week", y = "Average Ride Length (minutes)", color = "User Type") +
+  theme_minimal()
+ggsave("Average_Ride_Length_By_Day_Final.png", width = 10, height = 6)
+
+# Visualization - Total Rides by User Type
+total_rides %>%
+  group_by(usertype) %>%
+  summarise(total_rides = sum(total_rides)) %>%
+  ggplot(aes(x = usertype, y = total_rides, fill = usertype)) +
+  geom_bar(stat = "identity") +
+  labs(title = "Total Rides by User Type",
+       x = "User Type", y = "Total Rides", fill = "User Type") +
+  theme_minimal()
+ggsave("Total_Rides_By_User_Type_Final.png", width = 10, height = 6)
