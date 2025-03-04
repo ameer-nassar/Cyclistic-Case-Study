@@ -15,6 +15,7 @@ This project is part of the Google Data Analytics Capstone, analyzing bike share
 | `Total_Rides_By_Day_Final.png` | Final visualization: Total rides by day of the week. |
 | `Average_Ride_Length_By_Day_Final.png` | Final visualization: Average ride length by day of the week. |
 | `Total_Rides_By_User_Type_Final.png` | Final visualization: Total rides by user type. |
+**Note:** Due to GitHub's file size limits, the `Cleaned_Cyclistic_Data.csv` file (combined and cleaned dataset) could not be uploaded to this repository. The file is available locally and was used for analysis and visualization.
 
 ## Tools Used
 - **R** (tidyverse, ggplot2)
